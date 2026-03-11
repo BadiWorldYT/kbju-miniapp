@@ -399,15 +399,53 @@ function esc(s) {
 }
 
 /* ══ Data ══ */
-const TARGET = { kcal:1850, prot:140, fat:55, carbs:210 };
-let meals = [
-  { id:'m1', emoji:'🥣', tc:'thumb-green', name:'Овсянка с ягодами',   kcal:320, prot:12, fat:5,  carbs:58, time:'09:15', sec:'Утро'     },
-  { id:'m2', emoji:'🍗', tc:'thumb-photo', name:'Куриная грудка + рис', kcal:480, prot:45, fat:8,  carbs:38, time:'13:30', sec:'Обед',    photo:true },
-  { id:'m3', emoji:'🍎', tc:'thumb-blue',  name:'Яблоко + миндаль',     kcal:180, prot:5,  fat:10, carbs:22, time:'16:00', sec:'Полдник'  },
-  { id:'m4', emoji:'🥤', tc:'thumb-purple',name:'Протеиновый шейк',     kcal:180, prot:30, fat:3,  carbs:12, time:'17:00', sec:'Полдник'  },
-];
+const API_BASE = 'https://calorie-bot-645281158526.europe-west1.run.app';
+const MEAL_EMOJIS = ['🥣','🍗','🥗','🍎','🥤','🍳','🥦','🍝','🥙','🍲'];
+const MEAL_COLORS = ['thumb-green','thumb-photo','thumb-blue','thumb-purple','thumb-green','thumb-blue'];
+let TARGET = { kcal:2000, prot:150, fat:65, carbs:225 };
+let meals = [];
 let editingId = null;
 let addMode = 'ai';
+
+function _mealHour(time) {
+  const h = parseInt(time || '12');
+  if (h < 11) return 'Утро';
+  if (h < 16) return 'Обед';
+  if (h < 20) return 'Полдник';
+  return 'Ужин';
+}
+
+async function loadTodayData() {
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || '';
+  try {
+    const url = `${API_BASE}/api/miniapp/today?init_data=${encodeURIComponent(initData)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      if (resp.status === 403) { showToast('⚠️ Открой через Telegram'); return; }
+      showToast('⚠️ Не удалось загрузить данные');
+      renderMeals(); return;
+    }
+    const data = await resp.json();
+    const u = data.user;
+    TARGET = { kcal: u.target_calories, prot: u.target_protein_g, fat: u.target_fat_g, carbs: u.target_carbs_g };
+    meals = (data.today.meals || []).map((m, i) => ({
+      id: m.id,
+      emoji: MEAL_EMOJIS[i % MEAL_EMOJIS.length],
+      tc: MEAL_COLORS[i % MEAL_COLORS.length],
+      name: m.description,
+      kcal: m.calories,
+      prot: m.protein_g,
+      fat: m.fat_g,
+      carbs: m.carbs_g,
+      time: m.time,
+      sec: _mealHour(m.time),
+    }));
+  } catch(e) {
+    console.warn('API unavailable, using empty state', e);
+  }
+  renderMeals();
+}
 
 /* ══ Render ══ */
 function renderMeals() {
@@ -566,17 +604,24 @@ function attachSwipeListeners() {
 }
 
 function deleteMeal(id) {
-  meals=meals.filter(m=>m.id!==id);
-  const wrap=document.getElementById('wrap-'+id);
-  if(!wrap) return;
-  const h=wrap.offsetHeight;
-  wrap.style.height=h+'px'; wrap.style.overflow='hidden';
-  requestAnimationFrame(()=>{
-    wrap.style.transition='height .38s,opacity .28s,margin .38s';
-    wrap.style.height='0'; wrap.style.opacity='0'; wrap.style.marginBottom='0';
+  meals = meals.filter(m => m.id !== id);
+  const wrap = document.getElementById('wrap-' + id);
+  if (!wrap) return;
+  const h = wrap.offsetHeight;
+  wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
+  requestAnimationFrame(() => {
+    wrap.style.transition = 'height .38s,opacity .28s,margin .38s';
+    wrap.style.height = '0'; wrap.style.opacity = '0'; wrap.style.marginBottom = '0';
   });
   setTimeout(renderMeals, 400);
   showToast('🗑 Запись удалена');
+  // Call API in background
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || '';
+  fetch(`${API_BASE}/api/miniapp/meals/${id}`, {
+    method: 'DELETE',
+    headers: { 'X-Init-Data': initData },
+  }).catch(e => console.warn('Delete API error', e));
 }
 
 /* ══ Edit sheet ══ */
@@ -812,8 +857,7 @@ function showToast(msg){
 })();
 
 /* ══ Init ══ */
-renderMeals();
-setTimeout(()=>{ document.getElementById('mainBar').style.width='67%'; }, 350);
+loadTodayData();
 </script>
 </body>
 </html>
