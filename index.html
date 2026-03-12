@@ -224,10 +224,11 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
     </div>
     <div class="main-bar-track"><div class="main-bar-fill" id="mainBar" style="width:0%"></div></div>
     <div class="macro-row">
-      <div class="macro-chip"><span class="m-icon">🥩</span><span class="m-val" id="sumProt">82г</span><span class="m-label">из 140г</span></div>
-      <div class="macro-chip"><span class="m-icon">🧈</span><span class="m-val" id="sumFat">35г</span><span class="m-label">из 55г</span></div>
-      <div class="macro-chip"><span class="m-icon">🍞</span><span class="m-val" id="sumCarbs">145г</span><span class="m-label">из 210г</span></div>
-      <div class="macro-chip"><span class="m-icon">🎯</span><span class="m-val" id="sumPct">67%</span><span class="m-label">нормы</span></div>
+      <div class="macro-chip"><span class="m-icon">🥩</span><span class="m-val" id="sumProt">—г</span><span class="m-label" id="lblProt">из —г</span></div>
+      <div class="macro-chip"><span class="m-icon">🧈</span><span class="m-val" id="sumFat">—г</span><span class="m-label" id="lblFat">из —г</span></div>
+      <div class="macro-chip"><span class="m-icon">🍞</span><span class="m-val" id="sumCarbs">—г</span><span class="m-label" id="lblCarbs">из —г</span></div>
+      <div class="macro-chip"><span class="m-icon">🎯</span><span class="m-val" id="sumPct">—%</span><span class="m-label" id="lblTarget">из — ккал</span></div>
+      <div class="macro-chip" id="fiberChip" style="display:none"><span class="m-icon">🌿</span><span class="m-val" id="sumFiber">—г</span><span class="m-label" id="lblFiber">из —г</span></div>
     </div>
   </div>
   <div class="meals-section" id="mealsList"></div>
@@ -297,6 +298,17 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       <div class="settings-row">
         <div class="s-left"><div class="s-icon">🔔</div><div><div class="s-label">Утреннее напоминание</div><div class="s-sub">09:00 каждый день</div></div></div>
         <div class="toggle on" id="remToggle"></div>
+      </div>
+      <div class="settings-row">
+        <div class="s-left"><div class="s-icon">🌿</div><div><div class="s-label">Клетчатка</div><div class="s-sub" id="fiberSubLabel">Отслеживание выключено</div></div></div>
+        <div class="toggle" id="fiberToggle"></div>
+      </div>
+      <div id="fiberTargetRow" style="display:none;padding:4px 16px 14px;display:none">
+        <label style="font-size:11px;color:var(--text-2);letter-spacing:.04em">НОРМА КЛЕТЧАТКИ, г/день</label>
+        <div style="display:flex;gap:10px;margin-top:6px;align-items:center">
+          <input type="number" id="fiberTargetInput" class="inp" style="flex:1;padding:10px 12px" min="5" max="100" placeholder="25">
+          <button id="fiberTargetSave" style="background:var(--accent);color:#fff;border:none;border-radius:12px;padding:10px 16px;font-size:14px;cursor:pointer">Сохранить</button>
+        </div>
       </div>
       <div class="settings-row">
         <div class="s-left"><div class="s-icon">⭐</div><div><div class="s-label">Избранные блюда</div><div class="s-sub">5 сохранённых</div></div></div>
@@ -402,10 +414,12 @@ function esc(s) {
 const API_BASE = 'https://calorie-bot-645281158526.europe-west1.run.app';
 const MEAL_EMOJIS = ['🥣','🍗','🥗','🍎','🥤','🍳','🥦','🍝','🥙','🍲'];
 const MEAL_COLORS = ['thumb-green','thumb-photo','thumb-blue','thumb-purple','thumb-green','thumb-blue'];
-let TARGET = { kcal:2000, prot:150, fat:65, carbs:225 };
+let TARGET = { kcal:2000, prot:150, fat:65, carbs:225, fiber:25 };
+let trackFiber = false;
+let todayFiber = 0;
 let meals = [];
 let editingId = null;
-let addMode = 'ai';
+let addMode = 'manual';
 
 function _mealHour(time) {
   const h = parseInt(time || '12');
@@ -428,7 +442,9 @@ async function loadTodayData() {
     }
     const data = await resp.json();
     const u = data.user;
-    TARGET = { kcal: u.target_calories, prot: u.target_protein_g, fat: u.target_fat_g, carbs: u.target_carbs_g };
+    TARGET = { kcal: u.target_calories, prot: u.target_protein_g, fat: u.target_fat_g, carbs: u.target_carbs_g, fiber: u.target_fiber_g || 25 };
+    trackFiber = !!u.track_fiber;
+    todayFiber = data.today.fiber_g || 0;
     meals = (data.today.meals || []).map((m, i) => ({
       id: m.id,
       emoji: MEAL_EMOJIS[i % MEAL_EMOJIS.length],
@@ -445,6 +461,7 @@ async function loadTodayData() {
     console.warn('API unavailable, using empty state', e);
   }
   renderMeals();
+  if (typeof _syncFiberUI === 'function') _syncFiberUI();
 }
 
 /* ══ Render ══ */
@@ -537,15 +554,29 @@ function updateSummary() {
   const totFat   = meals.reduce((s,m) => s+m.fat, 0);
   const totCarbs = meals.reduce((s,m) => s+m.carbs, 0);
   const rem = Math.max(0, TARGET.kcal - totKcal);
-  const pct = Math.min(100, Math.round(totKcal / TARGET.kcal * 100));
+  const pct = Math.min(100, Math.round(totKcal / (TARGET.kcal || 1) * 100));
   function fmt(n) { return n >= 1000 ? Math.floor(n/1000)+'\u202f'+String(n%1000).padStart(3,'0') : String(n); }
-  document.getElementById('sumKcal').textContent  = fmt(totKcal) + '\u00a0ккал';
-  document.getElementById('sumRemain').textContent = 'Осталось:\u00a0' + fmt(rem);
-  document.getElementById('sumProt').textContent  = totProt + 'г';
-  document.getElementById('sumFat').textContent   = totFat + 'г';
-  document.getElementById('sumCarbs').textContent = totCarbs + 'г';
-  document.getElementById('sumPct').textContent   = pct + '%';
-  document.getElementById('mainBar').style.width  = pct + '%';
+  document.getElementById('sumKcal').textContent   = fmt(totKcal) + '\u00a0ккал';
+  document.getElementById('sumRemain').textContent  = 'Осталось:\u00a0' + fmt(rem);
+  document.getElementById('sumProt').textContent   = totProt + 'г';
+  document.getElementById('sumFat').textContent    = totFat + 'г';
+  document.getElementById('sumCarbs').textContent  = totCarbs + 'г';
+  document.getElementById('sumPct').textContent    = pct + '%';
+  document.getElementById('mainBar').style.width   = pct + '%';
+  // Динамические цели
+  document.getElementById('lblProt').textContent   = 'из ' + TARGET.prot + 'г';
+  document.getElementById('lblFat').textContent    = 'из ' + TARGET.fat + 'г';
+  document.getElementById('lblCarbs').textContent  = 'из ' + TARGET.carbs + 'г';
+  document.getElementById('lblTarget').textContent = 'из ' + fmt(TARGET.kcal) + ' ккал';
+  // Клетчатка
+  const fiberChip = document.getElementById('fiberChip');
+  if (trackFiber) {
+    fiberChip.style.display = '';
+    document.getElementById('sumFiber').textContent = todayFiber + 'г';
+    document.getElementById('lblFiber').textContent  = 'из ' + TARGET.fiber + 'г';
+  } else {
+    fiberChip.style.display = 'none';
+  }
 }
 
 /* ══ Swipe (fixed: button hidden until drag, no glow) ══ */
@@ -765,7 +796,7 @@ function refreshAddKcal() {
 }
 ['addProt','addFat','addCarbs'].forEach(id=>{ document.getElementById(id).addEventListener('input',refreshAddKcal); });
 
-document.getElementById('addSaveBtn').addEventListener('click', ()=>{
+document.getElementById('addSaveBtn').addEventListener('click', async ()=>{
   let name = addMode==='ai'
     ? (lastAiResult ? lastAiResult.name : '')
     : document.getElementById('addManualName').value.trim();
@@ -775,15 +806,35 @@ document.getElementById('addSaveBtn').addEventListener('click', ()=>{
   const carbs = +document.getElementById('addCarbs').value||0;
   const kcal  = +document.getElementById('addKcal').value||Math.round(prot*4+fat*9+carbs*4);
   if(kcal===0&&prot===0&&fat===0&&carbs===0){ showToast('⚠️ Введи БЖУ или используй ИИ анализ'); return; }
-  const emoji = (addMode==='ai'&&lastAiResult) ? lastAiResult.emoji : fallbackEmojis[Math.floor(Math.random()*fallbackEmojis.length)];
-  const sec = meals.length>0 ? meals[meals.length-1].sec : 'Завтрак';
-  meals.push({
-    id:'mx'+Date.now(),
-    emoji, tc: thumbClasses[Math.floor(Math.random()*4)],
-    name, kcal, prot, fat, carbs, sec,
-  });
-  closeAdd(); renderMeals();
-  showToast('✅ Записано: '+name+' — '+kcal+' ккал');
+
+  const btn = document.getElementById('addSaveBtn');
+  btn.disabled = true; btn.textContent = 'Сохраняю...';
+
+  try {
+    const tg = window.Telegram?.WebApp;
+    const initData = tg?.initData || '';
+    const resp = await fetch(`${API_BASE}/api/miniapp/meals?init_data=${encodeURIComponent(initData)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description: name, calories: kcal, protein_g: prot, fat_g: fat, carbs_g: carbs }),
+    });
+    if (resp.ok) {
+      closeAdd();
+      await loadTodayData();
+      showToast('✅ Записано: '+name+' — '+kcal+' ккал');
+    } else {
+      showToast('⚠️ Ошибка сохранения');
+    }
+  } catch(e) {
+    // offline fallback: add locally
+    const emoji = (addMode==='ai'&&lastAiResult) ? lastAiResult.emoji : fallbackEmojis[Math.floor(Math.random()*fallbackEmojis.length)];
+    const sec = meals.length>0 ? meals[meals.length-1].sec : 'Завтрак';
+    meals.push({ id:'mx'+Date.now(), emoji, tc: thumbClasses[Math.floor(Math.random()*4)], name, kcal, prot, fat, carbs, sec });
+    closeAdd(); renderMeals();
+    showToast('✅ Записано: '+name+' — '+kcal+' ккал');
+  } finally {
+    btn.disabled = false; btn.textContent = '✅ Сохранить';
+  }
 });
 
 /* ══ Theme ══ */
@@ -806,34 +857,96 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
     btn.classList.add('active');
+    if (btn.dataset.tab === 'stats') loadWeekData();
   });
 });
 
 /* ══ Settings toggles ══ */
 document.getElementById('remToggle').addEventListener('click', function(){ this.classList.toggle('on'); });
 
-/* ══ Stats chart ══ */
-const DAYS=[
-  {d:'Пн',k:1650,t:1850},{d:'Вт',k:1820,t:1850},{d:'Ср',k:1240,t:1850,today:true},
-  {d:'Чт',k:1750,t:1850},{d:'Пт',k:1980,t:1850},{d:'Сб',k:2100,t:1850},{d:'Вс',k:0,t:1850},
-];
-const barsEl=document.getElementById('statBars');
-DAYS.forEach((d,i)=>{
-  const col=document.createElement('div'); col.className='bar-col';
-  const wrap=document.createElement('div'); wrap.className='bar-wrap';
-  const bar=document.createElement('div');
-  let cls=d.k===0?'none':d.today?'ok':d.k>d.t*1.1?'bad':d.k>d.t?'over':'ok';
-  bar.className='bar '+cls; bar.style.height='0%';
-  if(d.today) bar.style.opacity='.65';
-  wrap.appendChild(bar);
-  const dayEl=document.createElement('div'); dayEl.className='bar-day'; dayEl.textContent=d.d;
-  if(d.today) dayEl.style.color='var(--accent)';
-  const valEl=document.createElement('div'); valEl.className='bar-val';
-  valEl.textContent=d.k>0?(d.k>=1000?(d.k/1000).toFixed(1)+'k':d.k):'—';
-  col.appendChild(wrap); col.appendChild(dayEl); col.appendChild(valEl);
-  barsEl.appendChild(col);
-  setTimeout(()=>{ bar.style.height=(d.k>0?d.k/2400*100:4)+'%'; }, 450+i*70);
+function _syncFiberUI() {
+  const toggle = document.getElementById('fiberToggle');
+  const row = document.getElementById('fiberTargetRow');
+  const sub = document.getElementById('fiberSubLabel');
+  toggle.classList.toggle('on', trackFiber);
+  row.style.display = trackFiber ? 'block' : 'none';
+  sub.textContent = trackFiber ? `Норма: ${TARGET.fiber}г в день` : 'Отслеживание выключено';
+  document.getElementById('fiberTargetInput').value = TARGET.fiber || 25;
+}
+
+async function _saveFiberSettings(newTrack, newTarget) {
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || '';
+  try {
+    await fetch(`${API_BASE}/api/miniapp/settings?init_data=${encodeURIComponent(initData)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ track_fiber: newTrack, target_fiber_g: newTarget }),
+    });
+  } catch(e) { /* ignore */ }
+}
+
+document.getElementById('fiberToggle').addEventListener('click', async function() {
+  trackFiber = !trackFiber;
+  _syncFiberUI();
+  await _saveFiberSettings(trackFiber, TARGET.fiber);
+  updateSummary();
+  showToast(trackFiber ? '🌿 Клетчатка включена' : 'Клетчатка выключена');
 });
+
+document.getElementById('fiberTargetSave').addEventListener('click', async () => {
+  const val = parseInt(document.getElementById('fiberTargetInput').value) || 25;
+  TARGET.fiber = val;
+  _syncFiberUI();
+  await _saveFiberSettings(trackFiber, val);
+  updateSummary();
+  showToast('✅ Норма клетчатки: ' + val + 'г');
+});
+
+/* ══ Stats chart ══ */
+function renderWeekBars(days) {
+  const barsEl = document.getElementById('statBars');
+  barsEl.innerHTML = '';
+  const maxKcal = Math.max(...days.map(d => Math.max(d.calories, d.target_calories)), 1);
+  const todayStr = new Date().toISOString().slice(0,10);
+  days.forEach((d, i) => {
+    const isToday = d.date === todayStr;
+    const col = document.createElement('div'); col.className = 'bar-col';
+    const wrap = document.createElement('div'); wrap.className = 'bar-wrap';
+    const bar = document.createElement('div');
+    let cls = d.calories === 0 ? 'none' : isToday ? 'ok' : d.calories > d.target_calories * 1.1 ? 'bad' : d.calories > d.target_calories ? 'over' : 'ok';
+    bar.className = 'bar ' + cls; bar.style.height = '0%';
+    if (isToday) bar.style.opacity = '.65';
+    wrap.appendChild(bar);
+    const dayEl = document.createElement('div'); dayEl.className = 'bar-day'; dayEl.textContent = d.day;
+    if (isToday) dayEl.style.color = 'var(--accent)';
+    const valEl = document.createElement('div'); valEl.className = 'bar-val';
+    valEl.textContent = d.calories > 0 ? (d.calories >= 1000 ? (d.calories/1000).toFixed(1)+'k' : d.calories) : '—';
+    col.appendChild(wrap); col.appendChild(dayEl); col.appendChild(valEl);
+    barsEl.appendChild(col);
+    setTimeout(() => { bar.style.height = (d.calories > 0 ? d.calories / maxKcal * 88 : 4) + '%'; }, 450 + i * 70);
+  });
+}
+
+async function loadWeekData() {
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || '';
+  try {
+    const url = `${API_BASE}/api/miniapp/week?init_data=${encodeURIComponent(initData)}`;
+    const resp = await fetch(url);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    renderWeekBars(data.days);
+  } catch(e) {
+    // fallback: empty bars
+    const fallback = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day => ({day, calories:0, target_calories:2000, date:''}));
+    renderWeekBars(fallback);
+  }
+}
+
+// Initial render with placeholders, then load real data
+renderWeekBars(['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day=>({day,calories:0,target_calories:2000,date:''})));
+loadWeekData();
 
 /* ══ Toast ══ */
 let toastTimer;
