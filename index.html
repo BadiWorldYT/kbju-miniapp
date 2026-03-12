@@ -295,7 +295,7 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       </div>
       <div class="settings-row">
         <div class="s-left"><div class="s-icon">🔔</div><div><div class="s-label">Утреннее напоминание</div><div class="s-sub">09:00 каждый день</div></div></div>
-        <div class="toggle on" id="remToggle"></div>
+        <div class="toggle" id="remToggle"></div>
       </div>
       <div class="settings-row">
         <div class="s-left"><div class="s-icon">🌿</div><div><div class="s-label">Клетчатка</div><div class="s-sub" id="fiberSubLabel">Отслеживание выключено</div></div></div>
@@ -461,6 +461,8 @@ async function loadTodayData() {
     const u = data.user;
     TARGET = { kcal: u.target_calories, prot: u.target_protein_g, fat: u.target_fat_g, carbs: u.target_carbs_g, fiber: u.target_fiber_g || 25 };
     trackFiber = !!u.track_fiber;
+    const remEl = document.getElementById('remToggle');
+    if (remEl) remEl.classList.toggle('on', !!u.morning_reminder);
     todayFiber = data.today.fiber_g || 0;
     meals = (data.today.meals || []).map((m, i) => ({
       id: m.id,
