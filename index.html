@@ -27,8 +27,12 @@ html.dark body{background:linear-gradient(160deg,#0d111c,#111827)}
 /* Header */
 .header{position:sticky;top:0;z-index:100;padding:14px 16px 0;background:var(--glass-bg);border-bottom:1px solid var(--glass-border);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
 .header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.header-left .date{font-size:12px;color:rgb(var(--color-content)/.45)}
 .header-left .title{font-size:20px;font-weight:800}
+.day-nav{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.day-nav-btn{background:none;border:none;color:rgb(var(--color-content)/.5);font-size:20px;font-weight:300;cursor:pointer;padding:0 5px;line-height:1;transition:color .15s;user-select:none}
+.day-nav-btn:active{color:var(--accent)}
+.day-nav-btn:disabled{opacity:.2;cursor:default}
+.day-nav-date{font-size:12px;color:rgb(var(--color-content)/.5);min-width:130px;text-align:center;white-space:nowrap}
 .header-right{display:flex;align-items:center;gap:8px}
 .streak-badge{background:var(--accent-grd);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;color:#fff}
 .theme-toggle{width:34px;height:34px;border-radius:50%;background:var(--glass-bg);border:1px solid var(--glass-border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;transition:transform .2s}
@@ -197,7 +201,11 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
 <div class="header">
   <div class="header-row">
     <div class="header-left">
-      <div class="date">Среда, 11 марта 2026</div>
+      <div class="day-nav">
+        <button class="day-nav-btn" id="prevDayBtn" aria-label="Предыдущий день">‹</button>
+        <div class="day-nav-date" id="dayNavDate">Загрузка...</div>
+        <button class="day-nav-btn" id="nextDayBtn" aria-label="Следующий день" disabled>›</button>
+      </div>
       <div class="title">Дневник питания</div>
     </div>
     <div class="header-right">
@@ -217,7 +225,7 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
   <div class="summary-card glass">
     <div class="summary-top">
       <div>
-        <div class="cal-target">Съедено сегодня</div>
+        <div class="cal-target" id="calDayLabel">Съедено сегодня</div>
         <div class="cal-eaten" id="sumKcal">1 240 ккал</div>
       </div>
       <div class="cal-remain" id="sumRemain">Осталось: 610</div>
@@ -438,6 +446,43 @@ let meals = [];
 let editingId = null;
 let addMode = 'manual';
 
+/* ══ Day Navigation ══ */
+function _clientToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+const _todayStr = _clientToday();
+let currentDate = _todayStr;
+
+const _DAYS_RU = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+const _MONTHS_RU = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+function _fmtNavDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return _DAYS_RU[d.getDay()] + ', ' + d.getDate() + '\u00a0' + _MONTHS_RU[d.getMonth()] + ' ' + d.getFullYear();
+}
+function _updateDayNav() {
+  const isToday = (currentDate >= _clientToday());
+  document.getElementById('dayNavDate').textContent = isToday ? 'Сегодня' : _fmtNavDate(currentDate);
+  document.getElementById('nextDayBtn').disabled = isToday;
+  document.getElementById('fabBtn').style.display = isToday ? '' : 'none';
+  const lbl = document.getElementById('calDayLabel');
+  if (lbl) lbl.textContent = isToday ? 'Съедено сегодня' : 'Съедено за ' + _fmtNavDate(currentDate).split(',')[0].toLowerCase();
+}
+document.getElementById('prevDayBtn').addEventListener('click', () => {
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() - 1);
+  currentDate = d.toISOString().slice(0, 10);
+  _updateDayNav();
+  loadTodayData();
+});
+document.getElementById('nextDayBtn').addEventListener('click', () => {
+  if (currentDate >= _clientToday()) return;
+  const d = new Date(currentDate + 'T12:00:00');
+  d.setDate(d.getDate() + 1);
+  currentDate = d.toISOString().slice(0, 10);
+  _updateDayNav();
+  loadTodayData();
+});
+
 function _mealHour(time) {
   const h = parseInt(time || '12');
   if (h < 11) return 'Утро';
@@ -450,10 +495,11 @@ async function loadTodayData() {
   const tg = window.Telegram?.WebApp;
   const initData = tg?.initData || '';
   try {
-    const url = `${API_BASE}/api/miniapp/today?init_data=${encodeURIComponent(initData)}`;
+    const dateParam = (currentDate && currentDate !== _todayStr) ? `&date=${currentDate}` : '';
+    const url = `${API_BASE}/api/miniapp/today?init_data=${encodeURIComponent(initData)}${dateParam}`;
     const resp = await fetch(url);
     if (!resp.ok) {
-      if (resp.status === 403) { showToast('⚠️ Открой через Telegram'); return; }
+      if (resp.status === 403) { showToast('⚠️ Открой через Telegram'); renderMeals(); return; }
       showToast('⚠️ Не удалось загрузить данные');
       renderMeals(); return;
     }
@@ -481,6 +527,7 @@ async function loadTodayData() {
   } catch(e) {
     console.warn('API unavailable, using empty state', e);
   }
+  _updateDayNav();
   renderMeals();
   if (typeof _syncFiberUI === 'function') _syncFiberUI();
   if (typeof updateSettingsGoals === 'function') updateSettingsGoals();
@@ -1163,6 +1210,7 @@ function hideUndoToast() {
 })();
 
 /* ══ Init ══ */
+_updateDayNav();
 loadTodayData();
 // Stats load lazily on tab open (see tab handler), but also preload in background
 setTimeout(loadWeekData, 1200);
