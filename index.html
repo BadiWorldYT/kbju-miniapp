@@ -201,7 +201,7 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       <div class="title">Дневник питания</div>
     </div>
     <div class="header-right">
-      <div class="streak-badge">🔥 7 дней</div>
+      <div class="streak-badge" id="streakBadge">🔥 0 дней</div>
       <div class="theme-toggle" id="themeBtn">☀️</div>
     </div>
   </div>
@@ -461,6 +461,8 @@ async function loadTodayData() {
     const u = data.user;
     TARGET = { kcal: u.target_calories, prot: u.target_protein_g, fat: u.target_fat_g, carbs: u.target_carbs_g, fiber: u.target_fiber_g || 25 };
     trackFiber = !!u.track_fiber;
+    const sb = document.getElementById('streakBadge');
+    if (sb) sb.textContent = '🔥 ' + (u.streak || 0) + ' дней';
     const remEl = document.getElementById('remToggle');
     if (remEl) remEl.classList.toggle('on', !!u.morning_reminder);
     todayFiber = data.today.fiber_g || 0;
