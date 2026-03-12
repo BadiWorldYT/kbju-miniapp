@@ -251,19 +251,17 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       </div>
     </div>
     <div class="stat-grid">
-      <div class="stat-card glass"><div class="stat-icon">📊</div><div class="stat-val green">1 720</div><div class="stat-lbl">Ккал в среднем</div></div>
-      <div class="stat-card glass"><div class="stat-icon">🥩</div><div class="stat-val orange">128г</div><div class="stat-lbl">Белок в среднем</div></div>
-      <div class="stat-card glass"><div class="stat-icon">📅</div><div class="stat-val blue">6/7</div><div class="stat-lbl">Дней записано</div></div>
-      <div class="stat-card glass"><div class="stat-icon">📉</div><div class="stat-val purple">−130</div><div class="stat-lbl">Дефицит ккал/день</div></div>
+      <div class="stat-card glass"><div class="stat-icon">📊</div><div class="stat-val green" id="statAvgKcal">—</div><div class="stat-lbl">Ккал в среднем</div></div>
+      <div class="stat-card glass"><div class="stat-icon">🥩</div><div class="stat-val orange" id="statAvgProt">—</div><div class="stat-lbl">Белок в среднем</div></div>
+      <div class="stat-card glass"><div class="stat-icon">📅</div><div class="stat-val blue" id="statLogged">—/7</div><div class="stat-lbl">Дней записано</div></div>
+      <div class="stat-card glass"><div class="stat-icon">📉</div><div class="stat-val purple" id="statDeficit">—</div><div class="stat-lbl">Дефицит ккал/день</div></div>
     </div>
     <div class="forecast-card glass">
       <div class="forecast-header">📈 Прогноз при текущем темпе</div>
-      <div class="forecast-main">−0.5 кг за 4 недели</div>
-      <div class="forecast-sub">При среднем дефиците 130 ккал/день</div>
+      <div class="forecast-main" id="forecastWeight">Загрузка...</div>
+      <div class="forecast-sub" id="forecastDeficit">Данные за неделю</div>
       <hr class="forecast-divider">
-      <div class="forecast-row"><span class="forecast-lbl">Цель достигнута через</span><span class="forecast-v" style="color:var(--accent)">~16 недель</span></div>
-      <div class="forecast-row"><span class="forecast-lbl">Самый калорийный день</span><span class="forecast-v" style="color:#ff9f0a">Суббота</span></div>
-      <div class="forecast-row" style="margin-bottom:0"><span class="forecast-lbl">Лучший день по белку</span><span class="forecast-v" style="color:#34c759">Вторник</span></div>
+      <div class="forecast-row"><span class="forecast-lbl">Самый калорийный день</span><span class="forecast-v" style="color:#ff9f0a" id="forecastBusiest">—</span></div>
     </div>
   </div>
 </div>
@@ -279,15 +277,15 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       </div>
     </div>
     <div class="settings-section glass">
-      <div class="settings-row">
+      <div class="settings-row" id="goalEditRow" style="cursor:pointer">
         <div class="s-left"><div class="s-icon">🎯</div><div><div class="s-label">Дневная цель</div><div class="s-sub">Калории / Белок / Жиры / Углеводы</div></div></div>
-        <span class="s-val">1 850 ккал</span>
+        <span class="s-val" id="goalKcalVal">— ккал</span>
       </div>
       <div style="padding:14px 16px">
-        <div class="goal-bar-row"><div class="goal-bar-hdr"><span>🔥 Калории</span><span>1 850</span></div><div class="goal-bar-track"><div class="goal-bar-fill" style="width:100%"></div></div></div>
-        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🥩 Белок</span><span>140г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" style="width:78%"></div></div></div>
-        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🧈 Жиры</span><span>55г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" style="width:44%"></div></div></div>
-        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🍞 Углеводы</span><span>210г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" style="width:65%"></div></div></div>
+        <div class="goal-bar-row"><div class="goal-bar-hdr"><span>🔥 Калории</span><span id="sbKcal">—</span></div><div class="goal-bar-track"><div class="goal-bar-fill" id="sbKcalFill" style="width:0%"></div></div></div>
+        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🥩 Белок</span><span id="sbProt">—г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" id="sbProtFill" style="width:0%"></div></div></div>
+        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🧈 Жиры</span><span id="sbFat">—г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" id="sbFatFill" style="width:0%"></div></div></div>
+        <div class="goal-bar-row" style="margin-top:10px"><div class="goal-bar-hdr"><span>🍞 Углеводы</span><span id="sbCarbs">—г</span></div><div class="goal-bar-track"><div class="goal-bar-fill" id="sbCarbsFill" style="width:0%"></div></div></div>
       </div>
     </div>
     <div class="settings-section glass">
@@ -316,13 +314,13 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
       </div>
     </div>
     <div class="settings-section glass">
-      <div class="settings-row">
-        <div class="s-left"><div class="s-icon">👤</div><div><div class="s-label">Профиль</div><div class="s-sub">Мужской · 28 лет · 80 кг · 178 см</div></div></div>
-        <span class="s-val">Изменить</span>
+      <div class="settings-row" id="profileEditRow" style="cursor:pointer">
+        <div class="s-left"><div class="s-icon">👤</div><div><div class="s-label">Профиль</div><div class="s-sub">Возраст, вес, рост</div></div></div>
+        <span class="s-val">В боте →</span>
       </div>
-      <div class="settings-row">
-        <div class="s-left"><div class="s-icon">🥗</div><div><div class="s-label">Тип питания</div><div class="s-sub">Стандартное</div></div></div>
-        <span class="s-val">Изменить</span>
+      <div class="settings-row" id="dietEditRow" style="cursor:pointer">
+        <div class="s-left"><div class="s-icon">🥗</div><div><div class="s-label">Тип питания</div><div class="s-sub" id="dietSubLabel">Стандартное</div></div></div>
+        <span class="s-val">В боте →</span>
       </div>
     </div>
   </div>
@@ -350,7 +348,26 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
     <div class="macro-inp-wrap"><label>🔥 КАЛОРИИ, ккал</label><input type="number" class="kcal-inp" id="editKcal" min="0" max="9999"></div>
   </div>
   <button class="sheet-btn btn-primary" id="editSaveBtn">✅ Сохранить</button>
+  <button class="sheet-btn btn-secondary" id="editCancelBtn">Отмена</button>
   <button class="sheet-btn btn-danger" id="editDeleteBtn">🗑 Удалить запись</button>
+</div>
+
+<!-- GOAL EDIT SHEET -->
+<div class="overlay" id="goalOverlay"></div>
+<div class="sheet" id="goalSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-header">
+    <div class="sheet-title">Изменить цели</div>
+    <button class="sheet-close" id="goalClose">✕</button>
+  </div>
+  <div class="macro-inputs">
+    <div class="macro-inp-wrap"><label>🔥 КАЛОРИИ, ккал</label><input type="number" class="kcal-inp" id="goalKcal" min="500" max="9999"></div>
+    <div class="macro-inp-wrap"><label>🥩 БЕЛОК, г</label><input type="number" id="goalProt" min="0" max="500"></div>
+    <div class="macro-inp-wrap"><label>🧈 ЖИРЫ, г</label><input type="number" id="goalFat" min="0" max="500"></div>
+    <div class="macro-inp-wrap"><label>🍞 УГЛЕВОДЫ, г</label><input type="number" id="goalCarbs" min="0" max="500"></div>
+  </div>
+  <button class="sheet-btn btn-primary" id="goalSaveBtn">✅ Сохранить</button>
+  <button class="sheet-btn btn-secondary" id="goalCancelBtn">Отмена</button>
 </div>
 
 <!-- ADD SHEET -->
@@ -384,8 +401,7 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
         <div style="font-size:13px;font-weight:600;margin-top:8px">Нажми чтобы выбрать фото</div>
       </div>
     </div>
-    <textarea class="inp ai-area" id="aiTextArea" placeholder="Описание (необязательно)..."></textarea>
-    <button class="ai-analyze" id="aiAnalyzeBtn">🔍 Анализировать</button>
+    <button class="ai-analyze" id="aiAnalyzeBtn">🔍 Анализировать фото</button>
   </div>
 
   <!-- Shared macro block -->
@@ -400,6 +416,7 @@ html:not(.dark) #toast{background:rgb(30,41,59)}
 </div>
 
 <div id="toast"></div>
+<div id="undoToast" style="position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(16px);background:rgba(30,41,59,.96);color:#fff;border-radius:14px;padding:11px 16px;display:flex;align-items:center;gap:12px;font-size:14px;font-weight:500;z-index:500;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px)"><span id="undoMsg">Запись удалена</span><button id="undoBtn" style="background:var(--accent);border:none;color:#fff;border-radius:8px;padding:5px 12px;font-size:13px;font-weight:700;cursor:pointer">Отменить</button></div>
 
 <script>
 /* ══ Safety helper — escape HTML in user-provided strings ══ */
@@ -462,6 +479,7 @@ async function loadTodayData() {
   }
   renderMeals();
   if (typeof _syncFiberUI === 'function') _syncFiberUI();
+  if (typeof updateSettingsGoals === 'function') updateSettingsGoals();
 }
 
 /* ══ Render ══ */
@@ -469,6 +487,16 @@ function renderMeals() {
   const container = document.getElementById('mealsList');
   // Clear and rebuild via DOM (safe, no innerHTML with user data)
   container.textContent = '';
+
+  if (meals.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'meal-placeholder';
+    empty.innerHTML = '<div style="font-size:40px;margin-bottom:10px">🍽</div><div style="font-weight:600;margin-bottom:4px">Ничего не записано</div><div style="font-size:12px">Нажми + чтобы добавить первый приём</div>';
+    empty.addEventListener('click', openAdd);
+    container.appendChild(empty);
+    updateSummary();
+    return;
+  }
 
   const sections = [...new Set(meals.map(m => m.sec))];
   sections.forEach(sec => {
@@ -634,25 +662,49 @@ function attachSwipeListeners() {
   });
 }
 
+let _undoDeleteTimer = null;
+let _pendingDeleteId = null;
+let _deletedMealBackup = null;
+
 function deleteMeal(id) {
+  const meal = meals.find(m => m.id === id);
+  if (!meal) return;
+
+  // Backup for undo
+  _deletedMealBackup = { ...meal };
+  _pendingDeleteId = id;
+
   meals = meals.filter(m => m.id !== id);
   const wrap = document.getElementById('wrap-' + id);
-  if (!wrap) return;
-  const h = wrap.offsetHeight;
-  wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
-  requestAnimationFrame(() => {
-    wrap.style.transition = 'height .38s,opacity .28s,margin .38s';
-    wrap.style.height = '0'; wrap.style.opacity = '0'; wrap.style.marginBottom = '0';
-  });
+  if (wrap) {
+    const h = wrap.offsetHeight;
+    wrap.style.height = h + 'px'; wrap.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      wrap.style.transition = 'height .38s,opacity .28s,margin .38s';
+      wrap.style.height = '0'; wrap.style.opacity = '0'; wrap.style.marginBottom = '0';
+    });
+  }
   setTimeout(renderMeals, 400);
-  showToast('🗑 Запись удалена');
-  // Call API in background
-  const tg = window.Telegram?.WebApp;
-  const initData = tg?.initData || '';
-  fetch(`${API_BASE}/api/miniapp/meals/${id}`, {
-    method: 'DELETE',
-    headers: { 'X-Init-Data': initData },
-  }).catch(e => console.warn('Delete API error', e));
+
+  // Show undo toast
+  showUndoToast('🗑 Запись удалена', () => {
+    // Undo: restore meal locally
+    if (_deletedMealBackup) {
+      meals.push(_deletedMealBackup);
+      meals.sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      _deletedMealBackup = null; _pendingDeleteId = null;
+      renderMeals(); showToast('↩️ Запись восстановлена');
+    }
+  }, () => {
+    // Confirmed: call API
+    const tg = window.Telegram?.WebApp;
+    const initData = tg?.initData || '';
+    fetch(`${API_BASE}/api/miniapp/meals/${id}`, {
+      method: 'DELETE',
+      headers: { 'X-Init-Data': initData },
+    }).catch(e => console.warn('Delete API error', e));
+    _deletedMealBackup = null; _pendingDeleteId = null;
+  });
 }
 
 /* ══ Edit sheet ══ */
@@ -702,6 +754,7 @@ document.getElementById('editSaveBtn').addEventListener('click', ()=>{
   m.kcal  = +document.getElementById('editKcal').value||Math.round(m.prot*4+m.fat*9+m.carbs*4);
   closeEdit(); renderMeals(); showToast('✅ Изменения сохранены');
 });
+document.getElementById('editCancelBtn').addEventListener('click', closeEdit);
 document.getElementById('editDeleteBtn').addEventListener('click', ()=>{
   const id=editingId; closeEdit(); deleteMeal(id);
 });
@@ -723,7 +776,6 @@ const fallbackEmojis = ['🍽','🥘','🫕','🥗','🍲','🥙'];
 function openAddSheet() {
   ['addProt','addFat','addCarbs','addKcal'].forEach(id=>{ document.getElementById(id).value=''; });
   document.getElementById('addManualName').value='';
-  document.getElementById('aiTextArea').value='';
   document.getElementById('aiPhotoPreview').style.display='none';
   document.getElementById('aiPhotoPlaceholder').style.display='';
   // reset to manual mode (first tab)
@@ -838,7 +890,7 @@ document.getElementById('addSaveBtn').addEventListener('click', async ()=>{
 });
 
 /* ══ Theme ══ */
-let isDark=true;
+let isDark = localStorage.getItem('theme') !== 'light';
 document.getElementById('themeBtn').addEventListener('click', ()=>setTheme(isDark?'light':'dark'));
 document.getElementById('opt-dark').addEventListener('click',  ()=>setTheme('dark'));
 document.getElementById('opt-light').addEventListener('click', ()=>setTheme('light'));
@@ -848,7 +900,10 @@ function setTheme(mode){
   document.getElementById('themeBtn').textContent = isDark?'☀️':'🌙';
   document.getElementById('opt-dark').style.borderColor  = isDark?'var(--accent)':'transparent';
   document.getElementById('opt-light').style.borderColor = isDark?'transparent':'var(--accent)';
+  localStorage.setItem('theme', mode);
 }
+// Apply persisted theme immediately (before Telegram init)
+if (!isDark) document.documentElement.classList.remove('dark');
 
 /* ══ Tabs ══ */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -862,7 +917,91 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* ══ Settings toggles ══ */
-document.getElementById('remToggle').addEventListener('click', function(){ this.classList.toggle('on'); });
+async function _saveSettings(updates) {
+  const tg = window.Telegram?.WebApp;
+  const initData = tg?.initData || '';
+  try {
+    const resp = await fetch(`${API_BASE}/api/miniapp/settings?init_data=${encodeURIComponent(initData)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+    return resp.ok;
+  } catch(e) { return false; }
+}
+
+document.getElementById('remToggle').addEventListener('click', async function() {
+  this.classList.toggle('on');
+  const isOn = this.classList.contains('on');
+  const ok = await _saveSettings({ morning_reminder: isOn });
+  showToast(ok ? (isOn ? '🔔 Напоминание включено' : '🔕 Напоминание выключено') : '⚠️ Не удалось сохранить');
+  if (!ok) this.classList.toggle('on'); // revert on error
+});
+
+/* ══ Settings goal bars ══ */
+function updateSettingsGoals() {
+  const els = {
+    kcal: document.getElementById('sbKcal'), kcalFill: document.getElementById('sbKcalFill'),
+    prot: document.getElementById('sbProt'), protFill: document.getElementById('sbProtFill'),
+    fat:  document.getElementById('sbFat'),  fatFill:  document.getElementById('sbFatFill'),
+    carbs:document.getElementById('sbCarbs'),carbsFill:document.getElementById('sbCarbsFill'),
+    val:  document.getElementById('goalKcalVal'),
+  };
+  if (!els.kcal) return;
+  els.kcal.textContent  = TARGET.kcal + ' ккал';
+  els.prot.textContent  = TARGET.prot + 'г';
+  els.fat.textContent   = TARGET.fat + 'г';
+  els.carbs.textContent = TARGET.carbs + 'г';
+  els.val.textContent   = TARGET.kcal + ' ккал';
+  // fill bars relative to kcal (protein, fat, carbs all scaled to kcal equivalent)
+  els.kcalFill.style.width  = '100%';
+  els.protFill.style.width  = Math.min(100, Math.round(TARGET.prot * 4 / TARGET.kcal * 100)) + '%';
+  els.fatFill.style.width   = Math.min(100, Math.round(TARGET.fat * 9 / TARGET.kcal * 100)) + '%';
+  els.carbsFill.style.width = Math.min(100, Math.round(TARGET.carbs * 4 / TARGET.kcal * 100)) + '%';
+}
+
+/* ══ Goal edit sheet ══ */
+function openGoalSheet() {
+  document.getElementById('goalKcal').value  = TARGET.kcal;
+  document.getElementById('goalProt').value  = TARGET.prot;
+  document.getElementById('goalFat').value   = TARGET.fat;
+  document.getElementById('goalCarbs').value = TARGET.carbs;
+  document.getElementById('goalOverlay').classList.add('show');
+  document.getElementById('goalSheet').classList.add('show');
+}
+function closeGoalSheet() {
+  document.getElementById('goalOverlay').classList.remove('show');
+  document.getElementById('goalSheet').classList.remove('show');
+}
+document.getElementById('goalEditRow').addEventListener('click', openGoalSheet);
+document.getElementById('goalClose').addEventListener('click', closeGoalSheet);
+document.getElementById('goalCancelBtn').addEventListener('click', closeGoalSheet);
+document.getElementById('goalOverlay').addEventListener('click', closeGoalSheet);
+document.getElementById('goalSaveBtn').addEventListener('click', async () => {
+  const kcal  = parseInt(document.getElementById('goalKcal').value)  || TARGET.kcal;
+  const prot  = parseInt(document.getElementById('goalProt').value)  || TARGET.prot;
+  const fat   = parseInt(document.getElementById('goalFat').value)   || TARGET.fat;
+  const carbs = parseInt(document.getElementById('goalCarbs').value) || TARGET.carbs;
+  const btn = document.getElementById('goalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Сохраняю...';
+  const ok = await _saveSettings({ target_calories: kcal, target_protein_g: prot, target_fat_g: fat, target_carbs_g: carbs });
+  btn.disabled = false; btn.textContent = '✅ Сохранить';
+  if (ok) {
+    TARGET = { ...TARGET, kcal, prot, fat, carbs };
+    updateSettingsGoals(); updateSummary();
+    closeGoalSheet(); showToast('✅ Цели обновлены');
+  } else {
+    showToast('⚠️ Не удалось сохранить');
+  }
+});
+
+/* ══ Profile / Diet edit → redirect to bot ══ */
+document.getElementById('profileEditRow').addEventListener('click', () => {
+  showToast('👤 Изменить профиль: /settings в боте');
+});
+document.getElementById('dietEditRow').addEventListener('click', () => {
+  showToast('🥗 Изменить тип питания: /settings в боте');
+});
 
 function _syncFiberUI() {
   const toggle = document.getElementById('fiberToggle');
@@ -874,31 +1013,22 @@ function _syncFiberUI() {
   document.getElementById('fiberTargetInput').value = TARGET.fiber || 25;
 }
 
-async function _saveFiberSettings(newTrack, newTarget) {
-  const tg = window.Telegram?.WebApp;
-  const initData = tg?.initData || '';
-  try {
-    await fetch(`${API_BASE}/api/miniapp/settings?init_data=${encodeURIComponent(initData)}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ track_fiber: newTrack, target_fiber_g: newTarget }),
-    });
-  } catch(e) { /* ignore */ }
-}
-
 document.getElementById('fiberToggle').addEventListener('click', async function() {
+  const prev = trackFiber;
   trackFiber = !trackFiber;
   _syncFiberUI();
-  await _saveFiberSettings(trackFiber, TARGET.fiber);
+  const ok = await _saveSettings({ track_fiber: trackFiber, target_fiber_g: TARGET.fiber });
+  if (!ok) { trackFiber = prev; _syncFiberUI(); showToast('⚠️ Не удалось сохранить'); return; }
   updateSummary();
   showToast(trackFiber ? '🌿 Клетчатка включена' : 'Клетчатка выключена');
 });
 
 document.getElementById('fiberTargetSave').addEventListener('click', async () => {
   const val = parseInt(document.getElementById('fiberTargetInput').value) || 25;
+  const ok = await _saveSettings({ track_fiber: trackFiber, target_fiber_g: val });
+  if (!ok) { showToast('⚠️ Не удалось сохранить'); return; }
   TARGET.fiber = val;
   _syncFiberUI();
-  await _saveFiberSettings(trackFiber, val);
   updateSummary();
   showToast('✅ Норма клетчатки: ' + val + 'г');
 });
@@ -928,25 +1058,62 @@ function renderWeekBars(days) {
   });
 }
 
+function updateStatsCards(days) {
+  const activeDays = days.filter(d => d.calories > 0);
+  const avgKcal = activeDays.length ? Math.round(activeDays.reduce((s,d)=>s+d.calories,0)/activeDays.length) : 0;
+  const avgProt = activeDays.length ? Math.round(activeDays.reduce((s,d)=>s+(d.protein_g||0),0)/activeDays.length) : 0;
+  const logged  = activeDays.length;
+  const target  = days[0]?.target_calories || TARGET.kcal || 2000;
+  const deficit = avgKcal > 0 ? (target - avgKcal) : 0;
+
+  const sv = (id, v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  sv('statAvgKcal', avgKcal > 0 ? avgKcal.toLocaleString('ru') : '—');
+  sv('statAvgProt', avgProt > 0 ? avgProt + 'г' : '—');
+  sv('statLogged',  logged + '/7');
+  sv('statDeficit', deficit > 0 ? '−' + deficit : deficit < 0 ? '+' + Math.abs(deficit) : '0');
+
+  // Forecast
+  const weightEl = document.getElementById('forecastWeight');
+  const deficitEl = document.getElementById('forecastDeficit');
+  if (weightEl && deficit > 0) {
+    const kgPerWeek = deficit * 7 / 7700;
+    weightEl.textContent = '−' + kgPerWeek.toFixed(1) + ' кг за 4 недели';
+    if (deficitEl) deficitEl.textContent = 'При среднем дефиците ' + deficit + ' ккал/день';
+  } else if (weightEl && deficit < 0) {
+    weightEl.textContent = '+' + (Math.abs(deficit)*7/7700).toFixed(1) + ' кг за 4 недели';
+    if (deficitEl) deficitEl.textContent = 'При профиците ' + Math.abs(deficit) + ' ккал/день';
+  }
+
+  // Best day
+  if (activeDays.length > 0) {
+    const busiest = days.reduce((a,b)=>b.calories>a.calories?b:a, days[0]);
+    const bv = document.getElementById('forecastBusiest');
+    if (bv) bv.textContent = busiest.day || '—';
+  }
+}
+
 async function loadWeekData() {
   const tg = window.Telegram?.WebApp;
   const initData = tg?.initData || '';
+  // Loading skeleton
+  document.getElementById('statBars').style.opacity = '0.4';
   try {
     const url = `${API_BASE}/api/miniapp/week?init_data=${encodeURIComponent(initData)}`;
     const resp = await fetch(url);
     if (!resp.ok) return;
     const data = await resp.json();
     renderWeekBars(data.days);
+    updateStatsCards(data.days);
   } catch(e) {
-    // fallback: empty bars
-    const fallback = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day => ({day, calories:0, target_calories:2000, date:''}));
+    const fallback = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day => ({day, calories:0, target_calories: TARGET.kcal || 2000, date:''}));
     renderWeekBars(fallback);
+  } finally {
+    document.getElementById('statBars').style.opacity = '1';
   }
 }
 
-// Initial render with placeholders, then load real data
-renderWeekBars(['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day=>({day,calories:0,target_calories:2000,date:''})));
-loadWeekData();
+// Initial render with placeholders, then load real data when stats tab is shown
+renderWeekBars(['Пн','Вт','Ср','Чт','Пт','Сб','Вс'].map(day=>({day,calories:0,target_calories:TARGET.kcal||2000,date:''})));
 
 /* ══ Toast ══ */
 let toastTimer;
@@ -955,6 +1122,28 @@ function showToast(msg){
   t.textContent=msg; t.style.opacity='1'; t.style.transform='translateX(-50%) translateY(0)';
   clearTimeout(toastTimer);
   toastTimer=setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateX(-50%) translateY(12px)'; }, 2400);
+}
+
+let _undoTimer=null, _undoOnConfirm=null;
+function showUndoToast(msg, onUndo, onConfirm) {
+  clearTimeout(_undoTimer);
+  _undoOnConfirm = onConfirm;
+  const el = document.getElementById('undoToast');
+  document.getElementById('undoMsg').textContent = msg;
+  el.style.opacity='1'; el.style.transform='translateX(-50%) translateY(0)'; el.style.pointerEvents='all';
+  document.getElementById('undoBtn').onclick = () => {
+    clearTimeout(_undoTimer);
+    hideUndoToast();
+    if (onUndo) onUndo();
+  };
+  _undoTimer = setTimeout(() => {
+    hideUndoToast();
+    if (_undoOnConfirm) { _undoOnConfirm(); _undoOnConfirm = null; }
+  }, 3500);
+}
+function hideUndoToast() {
+  const el = document.getElementById('undoToast');
+  el.style.opacity='0'; el.style.transform='translateX(-50%) translateY(16px)'; el.style.pointerEvents='none';
 }
 
 /* ══ Telegram WebApp init ══ */
@@ -971,6 +1160,8 @@ function showToast(msg){
 
 /* ══ Init ══ */
 loadTodayData();
+// Stats load lazily on tab open (see tab handler), but also preload in background
+setTimeout(loadWeekData, 1200);
 </script>
 </body>
 </html>
